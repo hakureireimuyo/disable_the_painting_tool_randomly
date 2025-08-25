@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>绘画功能禁用转盘 - 色相限制</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Arial Rounded MT Bold', 'Arial', sans-serif;
+        }
+        
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            color: #fff;
+            padding: 20px;
+            overflow: auto;
+            position: relative;
+            z-index: 1;
+        }
+        
+        /* 动态渐变背景 */
+        .gradient-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            animation: gradientShift 15s ease infinite;
+            background-size: 200% 200%;
+        }
+        
+        @keyframes gradientShift {
+            0% {
+                background-position: 0% 50%;
+            }
+            50% {
+                background-position: 100% 50%;
+            }
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 900px;
+            text-align: center;
+            background: rgba(0, 0, 0, 0.4);
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            margin: 20px 0;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        
+        .description {
+            font-size: 1.2rem;
+            margin-bottom: 30px;
+            color: rgba(255, 255, 255, 0.9);
+        }
+        
+        .input-container {
+            margin-bottom: 30px;
+            width: 100%;
+        }
+        
+        input {
+            padding: 12px 20px;
+            width: 300px;
+            border: none;
+            border-radius: 30px;
+            font-size: 1.1rem;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            outline: none;
+            background: rgba(255, 255, 255, 0.9);
+        }
+        
+        .wheel-container {
+            position: relative;
+            width: 400px;
+            height: 400px;
+            margin: 0 auto 40px;
+        }
+        
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+        }
+        
+        .center-display {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 150px;
+            height: 150px;
+            background: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #333;
+            font-weight: bold;
+            font-size: 1.2rem;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
+            z-index: 10;
+            overflow: hidden;
+            text-align: center;
+            padding: 10px;
+            transition: all 0.3s ease;
+        }
+        
+        .pointer {
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 20px;
+            height: 40px;
+            background: #ff4757;
+            clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+            z-index: 20;
+        }
+        
+        button {
+            padding: 15px 40px;
+            background: #ff4757;
+            color: white;
+            border: none;
+            border-radius: 30px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+            margin-bottom: 20px;
+        }
+        
+        button:hover {
+            background: #ff6b81;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.4);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        
+        .result {
+            margin-top: 30px;
+            font-size: 1.5rem;
+            min-height: 40px;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+        }
+        
+        .details {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            text-align: left;
+            max-height: 400px;
+            overflow-y: auto;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .details h3 {
+            margin-bottom: 10px;
+            color: #ffdd59;
+            position: sticky;
+            top: 0;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 8px;
+            border-radius: 5px;
+            z-index: 10;
+        }
+        
+        .details p {
+            margin-bottom: 10px;
+            line-height: 1.5;
+        }
+        
+        .details ul {
+            margin-left: 20px;
+            margin-bottom: 15px;
+        }
+        
+        .details li {
+            margin-bottom: 8px;
+        }
+        
+        .color-palette {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2px;
+            margin-top: 10px;
+            justify-content: center;
+        }
+        
+        .color-block {
+            width: 20px;
+            height: 20px;
+            border-radius: 2px;
+        }
+        
+        .color-info {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
+            justify-content: center;
+        }
+        
+        .color-range {
+            width: 80px;
+            height: 80px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: bold;
+            text-align: center;
+            padding: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        
+        .hue-range-container {
+            width: 100%;
+            margin: 20px 0;
+            position: relative;
+            height: 60px;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+        
+        .hue-range {
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background: linear-gradient(to right,
+                hsl(0, 100%, 50%),
+                hsl(30, 100%, 50%),
+                hsl(60, 100%, 50%),
+                hsl(90, 100%, 50%),
+                hsl(120, 100%, 50%),
+                hsl(150, 100%, 50%),
+                hsl(180, 100%, 50%),
+                hsl(210, 100%, 50%),
+                hsl(240, 100%, 50%),
+                hsl(270, 100%, 50%),
+                hsl(300, 100%, 50%),
+                hsl(330, 100%, 50%),
+                hsl(360, 100%, 50%)
+            );
+        }
+        
+        .allowed-hue-range {
+            position: absolute;
+            top: 0;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.3);
+            border: 2px solid white;
+            box-sizing: border-box;
+        }
+        
+        .hue-range-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+            font-size: 0.9rem;
+        }
+        
+        .hue-value {
+            background: rgba(0, 0, 0, 0.5);
+            padding: 3px 8px;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .blinking {
+            animation: blink 0.3s infinite;
+        }
+        
+        @media (max-width: 500px) {
+            .wheel-container {
+                width: 300px;
+                height: 300px;
+            }
+            
+            .center-display {
+                width: 120px;
+                height: 120px;
+                font-size: 1rem;
+            }
+            
+            input {
+                width: 90%;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .container {
+                padding: 20px;
+            }
+            
+            .color-block {
+                width: 15px;
+                height: 15px;
+            }
+            
+            .color-range {
+                width: 70px;
+                height: 70px;
+                font-size: 0.7rem;
+            }
+            
+            .details {
+                max-height: 300px;
+            }
+            
+            .hue-range-container {
+                height: 40px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="gradient-bg"></div>
+    
+    <div class="container">
+        <h1>🎨 绘画功能禁用转盘</h1>
+        <p class="description">输入参与者名字，抽取对方被禁用的绘画功能</p>
+        
+        <div class="input-container">
+            <input type="text" id="participant" placeholder="请输入对方的名字">
+        </div>
+        
+        <div class="wheel-container">
+            <canvas id="wheelCanvas"></canvas>
+            <div class="pointer"></div>
+            <div class="center-display" id="centerDisplay">画的开心</div>
+        </div>
+        
+        <button id="spinBtn">开始抽取</button>
+        
+        <div class="result" id="result"></div>
+        <div class="details" id="details"></div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const canvas = document.getElementById('wheelCanvas');
+            const ctx = canvas.getContext('2d');
+            const centerDisplay = document.getElementById('centerDisplay');
+            const spinBtn = document.getElementById('spinBtn');
+            const participantInput = document.getElementById('participant');
+            const resultDisplay = document.getElementById('result');
+            const detailsDisplay = document.getElementById('details');
+            
+            // 绘画功能禁用项 - 添加"色相限制"
+            const items = [
+                "右手", "数位板", "画笔", "图层", 
+                "色彩", "明暗", "色位",
+                "撤销", "橡皮擦", "色相限制"
+            ];
+            
+            // 转盘颜色
+            const colors = [
+                '#FF5252', '#FF4081', '#E040FB', '#7C4DFF',
+                '#536DFE', '#448AFF', '#40C4FF', '#18FFFF',
+                '#64FFDA', '#69F0AE', '#B2FF59'
+            ];
+            
+            let isSpinning = false;
+            let spinningAngle = 0;
+            let spinningSpeed = 0;
+            let selectedItem = null;
+            let blinkInterval = null;
+            
+            // 调整Canvas大小以适应容器
+            function resizeCanvas() {
+                const container = canvas.parentElement;
+                const size = Math.min(container.offsetWidth, container.offsetHeight);
+                canvas.width = size;
+                canvas.height = size;
+                drawWheel();
+            }
+            
+            // 绘制转盘
+            function drawWheel(angle = 0) {
+                const centerX = canvas.width / 2;
+                const centerY = canvas.height / 2;
+                const radius = Math.min(centerX, centerY) - 10;
+                
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                // 绘制转盘背景
+                const sectorAngle = (2 * Math.PI) / items.length;
+                
+                for (let i = 0; i < items.length; i++) {
+                    const startAngle = i * sectorAngle + angle;
+                    const endAngle = (i + 1) * sectorAngle + angle;
+                    
+                    ctx.beginPath();
+                    ctx.moveTo(centerX, centerY);
+                    ctx.arc(centerX, centerY, radius, startAngle, endAngle);
+                    ctx.closePath();
+                    
+                    ctx.fillStyle = colors[i];
+                    ctx.fill();
+                    
+                    // 添加一些装饰线条
+                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                }
+                
+                // 绘制外圈
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+                ctx.strokeStyle = '#FFF';
+                ctx.lineWidth = 4;
+                ctx.stroke();
+                
+                // 绘制中心圆
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, radius * 0.15, 0, 2 * Math.PI);
+                ctx.fillStyle = '#FFF';
+                ctx.fill();
+                ctx.strokeStyle = '#DDD';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            }
+            
+            // 开始闪烁效果
+            function startBlinking() {
+                let counter = 0;
+                clearInterval(blinkInterval);
+                
+                blinkInterval = setInterval(() => {
+                    centerDisplay.textContent = items[counter % items.length];
+                    centerDisplay.style.color = colors[counter % colors.length];
+                    counter++;
+                }, 100);
+            }
+            
+            // 停止闪烁并显示结果
+            function stopBlinking() {
+                clearInterval(blinkInterval);
+                centerDisplay.textContent = selectedItem;
+                centerDisplay.style.color = '#ff4757';
+                centerDisplay.classList.remove('blinking');
+            }
+            
+            // 生成8bit色板
+            function generate8bitPalette() {
+                const palette = [];
+                const steps = 6; // 每个通道的步数 (6步 = 216色 + 40种灰度)
+                
+                // 生成RGB颜色
+                for (let r = 0; r < steps; r++) {
+                    for (let g = 0; g < steps; g++) {
+                        for (let b = 0; b < steps; b++) {
+                            const red = Math.floor(r * 51);
+                            const green = Math.floor(g * 51);
+                            const blue = Math.floor(b * 51);
+                            palette.push(`rgb(${red}, ${green}, ${blue})`);
+                        }
+                    }
+                }
+                
+                // 添加灰度
+                for (let i = 0; i < 40; i++) {
+                    const gray = Math.floor(i * 6.375);
+                    palette.push(`rgb(${gray}, ${gray}, ${gray})`);
+                }
+                
+                return palette;
+            }
+            
+            // 生成随机色域
+            function generateRandomColorSpace() {
+                const colorSpaces = [
+                    { name: "sRGB", desc: "标准RGB色域，适用于大多数显示器和网络内容" },
+                    { name: "Adobe RGB", desc: "比sRGB更广的色域，特别适合印刷和摄影" },
+                    { name: "DCI-P3", desc: "数字影院色域，提供更丰富的红色和绿色" },
+                    { name: "Rec. 2020", desc: "超高清电视色域，覆盖更广的颜色范围" },
+                    { name: "CMYK", desc: "印刷色域，使用青、品红、黄、黑四色" }
+                ];
+                
+                return colorSpaces[Math.floor(Math.random() * colorSpaces.length)];
+            }
+            
+            // 生成随机色相范围
+            function generateRandomHueRange() {
+                // 随机生成起始色相 (0-1)
+                const startHue = Math.random();
+                
+                // 随机生成范围大小 (0.05-0.45)
+                const rangeSize = 0.05 + Math.random() * 0.40;
+                
+                // 计算结束色相
+                const endHue = (startHue + rangeSize) % 1;
+                
+                return {
+                    start: startHue,
+                    end: endHue,
+                    size: rangeSize
+                };
+            }
+            
+            // 显示详细结果
+            function showResultDetails(item) {
+                detailsDisplay.innerHTML = "";
+                
+                switch(item) {
+                    case "画笔":
+                        detailsDisplay.innerHTML = `
+                            <h3>画笔功能禁用详情</h3>
+                            <p>您被禁止使用所有画笔工具，包括：</p>
+                            <ul>
+                                <li>铅笔工具</li>
+                                <li>油画笔</li>
+                                <li>水彩笔</li>
+                                <li>喷枪工具</li>
+                                <li>马克笔</li>
+                            </ul>
+                            <p>您只能使用以下替代工具：</p>
+                            <ul>
+                                <li>形状工具</li>
+                                <li>填充工具</li>
+                                <li>路径工具</li>
+                                <li>橡皮擦（如果未被禁用）</li>
+                            </ul>
+                            <p>这项限制将挑战您使用非传统工具进行创作的能力，迫使您探索新的绘画方法。</p>
+                        `;
+                        break;
+                        
+                    case "色位":
+                        const palette = generate8bitPalette();
+                        detailsDisplay.innerHTML = `
+                            <h3>色位限制详情</h3>
+                            <p>您被限制使用8位色彩（256色），这意味着您只能使用以下颜色：</p>
+                            <div class="color-palette">
+                                ${palette.map(color => `<div class="color-block" style="background:${color}"></div>`).join('')}
+                            </div>
+                            <p>8位色彩是早期计算机显示器的标准，只能显示256种颜色。请使用上面的色板作为参考。</p>
+                            <p>这项限制将挑战您对有限色彩的运用能力，需要您精心选择颜色组合。</p>
+                        `;
+                        break;
+                        
+                    case "色域":
+                        const colorSpace = generateRandomColorSpace();
+                        detailsDisplay.innerHTML = `
+                            <h3>色域限制详情</h3>
+                            <p>您被限制使用 ${colorSpace.name} 色域。</p>
+                            <p>${colorSpace.desc}</p>
+                            <div class="color-info">
+                                <div class="color-range" style="background:linear-gradient(to right, #ff0000, #00ff00);">
+                                    ${colorSpace.name} 色域示例
+                                </div>
+                                <div class="color-range" style="background:linear-gradient(to right, #ff0000, #ff00ff);">
+                                    ${colorSpace.name} 色域示例
+                                </div>
+                                <div class="color-range" style="background:linear-gradient(to right, #00ff00, #0000ff);">
+                                    ${colorSpace.name} 色域示例
+                                </div>
+                            </div>
+                            <p>这项限制将挑战您在特定颜色范围内创作的能力，需要您精确控制色彩表达。</p>
+                        `;
+                        break;
+                        
+                    case "色相限制":
+                        const hueRange = generateRandomHueRange();
+                        const startPercent = hueRange.start * 100;
+                        const endPercent = hueRange.end * 100;
+                        const widthPercent = hueRange.size * 100;
+                        
+                        // 计算色相范围位置
+                        let leftPosition = startPercent;
+                        let rangeWidth = widthPercent;
+                        
+                        // 处理色相范围跨越0点的情况
+                        if (hueRange.end < hueRange.start) {
+                            rangeWidth = (1 - hueRange.start + hueRange.end) * 100;
+                        }
+                        
+                        detailsDisplay.innerHTML = `
+                            <h3>色相限制详情</h3>
+                            <p>您被限制使用特定的色相范围：</p>
+                            <p>允许的色相范围：${(hueRange.start * 360).toFixed(1)}° 到 ${(hueRange.end * 360).toFixed(1)}°</p>
+                            <p>色相范围大小：${(hueRange.size * 360).toFixed(1)}°</p>
+                            
+                            <div class="hue-range-container">
+                                <div class="hue-range"></div>
+                                <div class="allowed-hue-range" style="left: ${leftPosition}%; width: ${rangeWidth}%;"></div>
+                            </div>
+                            
+                            <div class="hue-range-labels">
+                                <div class="hue-value">0°</div>
+                                <div class="hue-value">90°</div>
+                                <div class="hue-value">180°</div>
+                                <div class="hue-value">270°</div>
+                                <div class="hue-value">360°</div>
+                            </div>
+                            
+                            <p>色相是颜色的基本属性之一，决定了颜色的"种类"（如红、黄、绿等）。</p>
+                            <p>这项限制要求您只能使用指定色相范围内的颜色进行创作。</p>
+                            <p>示例颜色：</p>
+                            <div class="color-info">
+                                <div class="color-range" style="background:hsl(${hueRange.start * 360}, 100%, 50%)">
+                                    起始色相
+                                </div>
+                                <div class="color-range" style="background:hsl(${(hueRange.start + hueRange.size/2) * 360}, 100%, 50%)">
+                                    中间色相
+                                </div>
+                                <div class="color-range" style="background:hsl(${hueRange.end * 360}, 100%, 50%)">
+                                    结束色相
+                                </div>
+                            </div>
+                        `;
+                        break;
+                        
+                    case "右手":
+                        detailsDisplay.innerHTML = `
+                            <h3>右手功能禁用详情</h3>
+                            <p>您被禁止使用右手进行绘画操作。</p>
+                            <p>这意味着您必须：</p>
+                            <ul>
+                                <li>使用左手操作鼠标或数位笔</li>
+                                <li>使用左手进行所有绘画操作</li>
+                                <li>将键盘快捷键调整到左侧</li>
+                            </ul>
+                            <p>这项限制旨在挑战您的绘画习惯并探索新的创作方式。</p>
+                            <p>通过使用非惯用手，您将开发新的神经通路，提升大脑灵活性。</p>
+                        `;
+                        break;
+                        
+                    case "数位板":
+                        detailsDisplay.innerHTML = `
+                            <h3>数位板禁用详情</h3>
+                            <p>您被禁止使用数位板进行绘画。</p>
+                            <p>这意味着您必须：</p>
+                            <ul>
+                                <li>使用鼠标进行所有绘画操作</li>
+                                <li>或者使用触摸板（如果可用）</li>
+                                <li>或者使用触摸屏（如果可用）</li>
+                            </ul>
+                            <p>这项限制将挑战您的精确控制能力。</p>
+                            <p>在没有压力感应和精确控制的情况下创作，将迫使您发展新的绘画技巧。</p>
+                        `;
+                        break;
+                        
+                    case "图层":
+                        detailsDisplay.innerHTML = `
+                            <h3>图层功能禁用详情</h3>
+                            <p>您被禁止使用图层功能。</p>
+                            <p>这意味着您必须：</p>
+                            <ul>
+                                <li>在单一图层上完成所有绘画</li>
+                                <li>无法使用图层混合模式</li>
+                                <li>无法使用图层蒙版</li>
+                                <li>无法调整单个图层的不透明度</li>
+                            </ul>
+                            <p>这项限制将挑战您的构图和规划能力。</p>
+                            <p>在单层上工作将迫使您提前规划作品，并接受无法轻易修改的创作过程。</p>
+                        `;
+                        break;
+                        
+                    case "色彩":
+                        detailsDisplay.innerHTML = `
+                            <h3>色彩功能禁用详情</h3>
+                            <p>您被禁止使用任何彩色。</p>
+                            <p>这意味着您必须：</p>
+                            <ul>
+                                <li>仅使用黑白灰进行创作</li>
+                                <li>无法使用任何彩色工具</li>
+                                <li>无法调整色相或饱和度</li>
+                            </ul>
+                            <p>这项限制将挑战您对明暗和构图的把握。</p>
+                            <p>在无彩色的世界中创作将帮助您专注于形式、纹理和对比度。</p>
+                        `;
+                        break;
+                        
+                    case "明暗":
+                        detailsDisplay.innerHTML = `
+                            <h3>明暗功能禁用详情</h3>
+                            <p>您被禁止调整明暗关系。</p>
+                            <p>这意味着您必须：</p>
+                            <ul>
+                                <li>使用固定亮度进行创作</li>
+                                <li>无法调整亮度/对比度</li>
+                                <li>无法使用加深/减淡工具</li>
+                            </ul>
+                            <p>这项限制将挑战您对固有色的把握能力。</p>
+                            <p>在无法调整明暗的情况下，您需要依靠颜色选择和构图来创造深度感。</p>
+                        `;
+                        break;
+                        
+                    case "撤销":
+                        detailsDisplay.innerHTML = `
+                            <h3>撤销功能禁用详情</h3>
+                            <p>您被禁止使用撤销功能。</p>
+                            <p>这意味着您必须：</p>
+                            <ul>
+                                <li>无法撤销任何操作</li>
+                                <li>无法使用历史记录</li>
+                                <li>每一步操作都将成为最终作品的一部分</li>
+                            </ul>
+                            <p>这项限制将挑战您的决策能力和绘画准确性。</p>
+                            <p>在没有安全网的情况下创作将迫使您更加谨慎，并接受"错误"作为创作过程的一部分。</p>
+                        `;
+                        break;
+                        
+                    case "橡皮擦":
+                        detailsDisplay.innerHTML = `
+                            <h3>橡皮擦功能禁用详情</h3>
+                            <p>您被禁止使用橡皮擦工具。</p>
+                            <p>这意味着您必须：</p>
+                            <ul>
+                                <li>无法擦除任何错误</li>
+                                <li>只能使用覆盖或修改的方式修正错误</li>
+                                <li>每一步落笔都需要谨慎考虑</li>
+                            </ul>
+                            <p>这项限制将挑战您的精确性和规划能力。</p>
+                            <p>在没有橡皮擦的情况下创作将帮助您发展更自信的笔触和更精确的绘画技巧。</p>
+                        `;
+                        break;
+                        
+                    default:
+                        detailsDisplay.innerHTML = `
+                            <h3>功能禁用详情</h3>
+                            <p>您被禁止使用 ${item} 功能。</p>
+                            <p>请尝试在没有此功能的情况下完成创作，这将挑战您的适应能力和创造力。</p>
+                            <p>这项限制旨在帮助您突破舒适区，探索新的创作方法和技术。</p>
+                        `;
+                }
+            }
+            
+            // 旋转动画
+            function animate() {
+                if (!isSpinning) return;
+                
+                spinningAngle += spinningSpeed;
+                spinningSpeed *= 0.99; // 减速
+                
+                drawWheel(spinningAngle);
+                
+                if (spinningSpeed < 0.001) {
+                    isSpinning = false;
+                    
+                    // 确定选中项
+                    const sectorAngle = (2 * Math.PI) / items.length;
+                    const normalizedAngle = (spinningAngle % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
+                    const winnerIndex = Math.floor(normalizedAngle / sectorAngle);
+                    selectedItem = items[winnerIndex];
+                    
+                    stopBlinking();
+                    
+                    // 显示结果
+                    const participant = participantInput.value || "参与者";
+                    resultDisplay.textContent = `${participant} 被禁用的功能是: ${selectedItem}`;
+                    
+                    // 显示详细结果
+                    showResultDetails(selectedItem);
+                    
+                    // 自动滚动到结果区域
+                    setTimeout(() => {
+                        detailsDisplay.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    }, 500);
+                    
+                    spinBtn.disabled = false;
+                    spinBtn.textContent = "再次抽取";
+                } else {
+                    requestAnimationFrame(animate);
+                }
+            }
+            
+            // 开始旋转
+            function startSpin() {
+                if (isSpinning) return;
+                
+                const participant = participantInput.value || "参与者";
+                resultDisplay.textContent = `祝你好运, ${participant}！`;
+                detailsDisplay.innerHTML = "";
+                
+                isSpinning = true;
+                spinningSpeed = 0.55 + Math.random() * 0.25;
+                spinBtn.disabled = true;
+                
+                centerDisplay.classList.add('blinking');
+                startBlinking();
+                
+                animate();
+            }
+            
+            // 事件监听
+            spinBtn.addEventListener('click', startSpin);
+            
+            // 初始化
+            window.addEventListener('resize', resizeCanvas);
+            resizeCanvas();
+            
+            // 添加键盘事件支持
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' && !isSpinning) {
+                    startSpin();
+                }
+            });
+        });
+    </script>
+</body>
+</html>
